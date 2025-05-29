@@ -229,7 +229,7 @@
             const dispersion = dispersionPercent / 100;
             
             // Gerar dados base com relação linear
-            const slope = Math.random() > 0.5 ? Math.random() * 0.8 + 0.2 : -(Math.random() * 0.8 + 0.2);
+            const slope = (Math.random() - 0.5) * 1.6;
             const baseIntercept = 50;
             
             // Primeiro, gerar os dados
