@@ -37,6 +37,8 @@
             cursor: pointer;
             display: block;
             margin: 0 auto;
+            max-width: 100%;
+            height: auto;
         }
         
         .controls {
@@ -168,8 +170,31 @@
         const curveCanvas = document.getElementById('curveCanvas');
         const curveCtx = curveCanvas.getContext('2d');
         
+        // Função para ajustar tamanho dos canvas responsivamente
+        function resizeCanvas() {
+            const container = document.querySelector('.container');
+            const containerWidth = container.clientWidth - 40; // padding da container
+            
+            // Ajustar canvas do gráfico de dispersão
+            const scatterRatio = 400 / 560; // altura/largura original
+            let scatterWidth = Math.min(560, containerWidth);
+            let scatterHeight = scatterWidth * scatterRatio;
+            
+            scatterCanvas.style.width = scatterWidth + 'px';
+            scatterCanvas.style.height = scatterHeight + 'px';
+            
+            // Ajustar canvas da curva
+            const curveRatio = 300 / 560; // altura/largura original
+            let curveWidth = Math.min(560, containerWidth);
+            let curveHeight = curveWidth * curveRatio;
+            
+            curveCanvas.style.width = curveWidth + 'px';
+            curveCanvas.style.height = curveHeight + 'px';
+        }
+        
         // Inicialização
         function init() {
+            resizeCanvas();
             generateData();
             initializeLine();
             drawScatterPlot();
@@ -186,6 +211,13 @@
             document.getElementById('dispersion').addEventListener('change', function() {
                 generateData();
                 drawScatterPlot();
+            });
+            
+            // Redimensionar canvas quando a janela mudar de tamanho
+            window.addEventListener('resize', function() {
+                resizeCanvas();
+                drawScatterPlot();
+                drawCurve();
             });
         }
         
