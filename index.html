@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajuste de Modelos Lineares - Mínimos Quadrados</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .canvas-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        canvas {
+            border: 1px solid #ddd;
+            cursor: pointer;
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .controls {
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .control-group {
+            margin: 10px 0;
+        }
+        
+        label {
+            display: inline-block;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        
+        input[type="number"] {
+            width: 60px;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        button.reset {
+            background-color: #f44336;
+        }
+        
+        button.reset:hover {
+            background-color: #da190b;
+        }
+        
+        .results {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .results h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        
+        .result-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <h1>Demonstração: Ajuste Linear por Mínimos Quadrados</h1>
+    
+    <div class="container">
+        <div class="canvas-container">
+            <canvas id="scatterCanvas" width="560" height="400"></canvas>
+        </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="dispersion">Dispersão:</label>
+                <input type="number" id="dispersion" min="0" max="100" step="10" value="50">
+                <span>%</span>
+            </div>
+            
+            <button onclick="calculateSumOfSquares()">Calcular Soma dos Quadrados</button>
+            <button class="reset" onclick="reset()">Resetar</button>
+        </div>
+        
+        <div class="canvas-container">
+            <canvas id="curveCanvas" width="560" height="300"></canvas>
+        </div>
+        
+        <div class="results">
+            <h3>Resultados</h3>
+            <div style="display: flex; justify-content: space-around; margin-bottom: 15px;">
+                <div>
+                    <p style="margin: 5px 0;">Cálculo Atual:</p>
+                    <p>SQR: <span class="result-value" id="currentSSE">-</span></p>
+                    <p>b: <span class="result-value" id="currentB">-</span></p>
+                </div>
+                <div>
+                    <p style="margin: 5px 0;">Melhor Ajuste:</p>
+                    <p>SQR: <span class="result-value" id="minSSE">-</span></p>
+                    <p>b: <span class="result-value" id="optimalB">-</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer style="text-align: center; margin-top: 20px; color: #666; font-size: 14px;">
+        © 2025 Rodrigo Pereira
+    </footer>
+
+    <script>
+        // Variáveis globais
+        let data = [];
+        let lineY1, lineY2;
+        let isDragging = false;
+        let dragPoint = null;
+        let sseHistory = [];
+        let minSSE = Infinity;
+        let optimalB = 0;
+        let dataMinY = 0;
+        let dataMaxY = 100;
+        let dataMinX = 0;
+        let dataMaxX = 100;
+        
+        // Canvas e contextos
+        const scatterCanvas = document.getElementById('scatterCanvas');
+        const scatterCtx = scatterCanvas.getContext('2d');
+        const curveCanvas = document.getElementById('curveCanvas');
+        const curveCtx = curveCanvas.getContext('2d');
+        
+        // Inicialização
+        function init() {
+            generateData();
+            initializeLine();
+            drawScatterPlot();
+            drawCurve();
+            
+            // Event listeners
+            scatterCanvas.addEventListener('mousedown', handleMouseDown);
+            scatterCanvas.addEventListener('mousemove', handleMouseMove);
+            scatterCanvas.addEventListener('mouseup', handleMouseUp);
+            scatterCanvas.addEventListener('touchstart', handleTouchStart);
+            scatterCanvas.addEventListener('touchmove', handleTouchMove);
+            scatterCanvas.addEventListener('touchend', handleTouchEnd);
+            
+            document.getElementById('dispersion').addEventListener('change', function() {
+                generateData();
+                drawScatterPlot();
+            });
+        }
+        
+        // Gerar dados simulados
+        function generateData() {
+            data = [];
+            const dispersionPercent = parseFloat(document.getElementById('dispersion').value);
+            const dispersion = dispersionPercent / 100;
+            
+            // Gerar dados base com relação linear
+            const slope = Math.random() > 0.5 ? Math.random() * 0.8 + 0.2 : -(Math.random() * 0.8 + 0.2);
+            const baseIntercept = 50;
+            
+            // Primeiro, gerar os dados
+            for (let i = 0; i < 100; i++) {
+                const x = Math.random() * 100;
+                const baseY = slope * x + baseIntercept;
+                // Aumentar o ruído com a dispersão (100% = ruído domina completamente)
+                const maxNoise = 100 * dispersion;
+                const noise = (Math.random() - 0.5) * 2 * maxNoise;
+                const y = baseY + noise;
+                data.push({ x: x, y: y });
+            }
+            
+            // Encontrar os limites reais dos dados
+            let minX = Infinity, maxX = -Infinity;
+            let minY = Infinity, maxY = -Infinity;
+            
+            data.forEach(point => {
+                minX = Math.min(minX, point.x);
+                maxX = Math.max(maxX, point.x);
+                minY = Math.min(minY, point.y);
+                maxY = Math.max(maxY, point.y);
+            });
+            
+            // Adicionar margem de 10%
+            const xMargin = (maxX - minX) * 0.1;
+            const yMargin = (maxY - minY) * 0.1;
+            
+            dataMinX = minX - xMargin;
+            dataMaxX = maxX + xMargin;
+            dataMinY = minY - yMargin;
+            dataMaxY = maxY + yMargin;
+            
+            // Normalizar os dados para o intervalo 0-100 para facilitar os cálculos
+            data = data.map(point => ({
+                x: (point.x - dataMinX) / (dataMaxX - dataMinX) * 100,
+                y: (point.y - dataMinY) / (dataMaxY - dataMinY) * 100
+            }));
+        }
+        
+        // Inicializar linha horizontal no topo
+        function initializeLine() {
+            lineY1 = 20;
+            lineY2 = 20;
+        }
+        
+        // Converter coordenadas do canvas para coordenadas dos dados
+        function canvasToData(canvasX, canvasY) {
+            const margin = 30;
+            const x = ((canvasX - margin) / (scatterCanvas.width - margin - 10)) * 100;
+            const y = 100 - ((canvasY - 10) / (scatterCanvas.height - margin - 10)) * 100;
+            return { x, y };
+        }
+        
+        // Converter coordenadas dos dados para coordenadas do canvas
+        function dataToCanvas(dataX, dataY) {
+            const margin = 30;
+            const x = margin + ((dataX / 100) * (scatterCanvas.width - margin - 10));
+            const y = ((100 - dataY) / 100) * (scatterCanvas.height - margin - 10) + 10;
+            return { x, y };
+        }
+        
+        // Desenhar gráfico de dispersão
+        function drawScatterPlot() {
+            scatterCtx.clearRect(0, 0, scatterCanvas.width, scatterCanvas.height);
+            
+            // Desenhar eixos
+            scatterCtx.strokeStyle = '#ddd';
+            scatterCtx.lineWidth = 1;
+            scatterCtx.beginPath();
+            // Eixo X
+            scatterCtx.moveTo(30, scatterCanvas.height - 30);
+            scatterCtx.lineTo(scatterCanvas.width - 10, scatterCanvas.height - 30);
+            // Eixo Y
+            scatterCtx.moveTo(30, scatterCanvas.height - 30);
+            scatterCtx.lineTo(30, 10);
+            scatterCtx.stroke();
+            
+            // Desenhar pontos
+            scatterCtx.fillStyle = '#4CAF50';
+            data.forEach(point => {
+                const canvasPoint = dataToCanvas(point.x, point.y);
+                scatterCtx.beginPath();
+                scatterCtx.arc(canvasPoint.x, canvasPoint.y, 3, 0, 2 * Math.PI);
+                scatterCtx.fill();
+            });
+            
+            // Desenhar linha ajustável
+            drawLine();
+        }
+        
+        // Desenhar linha
+        function drawLine() {
+            const leftPoint = dataToCanvas(0, lineY1);
+            const rightPoint = dataToCanvas(100, lineY2);
+            
+            scatterCtx.strokeStyle = '#ff0000';
+            scatterCtx.lineWidth = 2;
+            scatterCtx.beginPath();
+            scatterCtx.moveTo(leftPoint.x, leftPoint.y);
+            scatterCtx.lineTo(rightPoint.x, rightPoint.y);
+            scatterCtx.stroke();
+            
+            // Desenhar pontos de controle
+            scatterCtx.fillStyle = '#ff0000';
+            scatterCtx.beginPath();
+            scatterCtx.arc(leftPoint.x, leftPoint.y, 8, 0, 2 * Math.PI);
+            scatterCtx.fill();
+            scatterCtx.beginPath();
+            scatterCtx.arc(rightPoint.x, rightPoint.y, 8, 0, 2 * Math.PI);
+            scatterCtx.fill();
+        }
+        
+        // Manipulação de mouse/touch
+        function getEventPos(e) {
+            const rect = scatterCanvas.getBoundingClientRect();
+            if (e.touches) {
+                return {
+                    x: e.touches[0].clientX - rect.left,
+                    y: e.touches[0].clientY - rect.top
+                };
+            }
+            return {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+        }
+        
+        function handleMouseDown(e) {
+            handleStart(getEventPos(e));
+        }
+        
+        function handleTouchStart(e) {
+            e.preventDefault();
+            handleStart(getEventPos(e));
+        }
+        
+        function handleStart(pos) {
+            const leftPoint = dataToCanvas(0, lineY1);
+            const rightPoint = dataToCanvas(100, lineY2);
+            
+            const distToLeft = Math.sqrt(Math.pow(pos.x - leftPoint.x, 2) + Math.pow(pos.y - leftPoint.y, 2));
+            const distToRight = Math.sqrt(Math.pow(pos.x - rightPoint.x, 2) + Math.pow(pos.y - rightPoint.y, 2));
+            
+            if (distToLeft < 15) {
+                isDragging = true;
+                dragPoint = 'left';
+            } else if (distToRight < 15) {
+                isDragging = true;
+                dragPoint = 'right';
+            }
+        }
+        
+        function handleMouseMove(e) {
+            handleMove(getEventPos(e));
+        }
+        
+        function handleTouchMove(e) {
+            e.preventDefault();
+            handleMove(getEventPos(e));
+        }
+        
+        function handleMove(pos) {
+            if (isDragging) {
+                const dataPos = canvasToData(pos.x, pos.y);
+                
+                if (dragPoint === 'left') {
+                    lineY1 = Math.max(0, Math.min(100, dataPos.y));
+                } else if (dragPoint === 'right') {
+                    lineY2 = Math.max(0, Math.min(100, dataPos.y));
+                }
+                
+                drawScatterPlot();
+            }
+        }
+        
+        function handleMouseUp() {
+            isDragging = false;
+            dragPoint = null;
+        }
+        
+        function handleTouchEnd(e) {
+            e.preventDefault();
+            isDragging = false;
+            dragPoint = null;
+        }
+        
+        // Calcular coeficiente angular
+        function calculateSlope() {
+            return (lineY2 - lineY1) / 100;
+        }
+        
+        // Calcular intercepto
+        function calculateIntercept() {
+            return lineY1;
+        }
+        
+        // Calcular soma dos quadrados
+        function calculateSumOfSquares() {
+            const slope = calculateSlope();
+            const intercept = calculateIntercept();
+            
+            let sse = 0;
+            data.forEach(point => {
+                const predicted = slope * point.x + intercept;
+                const error = point.y - predicted;
+                sse += error * error;
+            });
+            
+            // Adicionar ao histórico
+            sseHistory.push({ b: slope, sse: sse });
+            
+            // Atualizar valores atuais
+            document.getElementById('currentSSE').textContent = sse.toFixed(2);
+            document.getElementById('currentB').textContent = slope.toFixed(4);
+            
+            // Atualizar mínimos
+            if (sse < minSSE) {
+                minSSE = sse;
+                optimalB = slope;
+            }
+            
+            // Atualizar interface
+            updateResults();
+            drawCurve();
+        }
+        
+        // Desenhar curva de minimização
+        function drawCurve() {
+            curveCtx.clearRect(0, 0, curveCanvas.width, curveCanvas.height);
+            
+            if (sseHistory.length === 0) return;
+            
+            // Encontrar limites
+            let minB = Infinity, maxB = -Infinity;
+            let maxSSE = -Infinity;
+            
+            sseHistory.forEach(point => {
+                minB = Math.min(minB, point.b);
+                maxB = Math.max(maxB, point.b);
+                maxSSE = Math.max(maxSSE, point.sse);
+            });
+            
+            // Adicionar margem
+            const bRange = maxB - minB || 1;
+            minB -= bRange * 0.1;
+            maxB += bRange * 0.1;
+            
+            // Desenhar eixos
+            curveCtx.strokeStyle = '#333';
+            curveCtx.lineWidth = 1;
+            curveCtx.beginPath();
+            curveCtx.moveTo(40, curveCanvas.height - 30);
+            curveCtx.lineTo(curveCanvas.width - 20, curveCanvas.height - 30);
+            curveCtx.moveTo(40, curveCanvas.height - 30);
+            curveCtx.lineTo(40, 20);
+            curveCtx.stroke();
+            
+            // Labels
+            curveCtx.fillStyle = '#333';
+            curveCtx.font = '12px Arial';
+            curveCtx.textAlign = 'center';
+            curveCtx.fillText('Coeficiente Angular (b)', curveCanvas.width / 2, curveCanvas.height - 5);
+            curveCtx.save();
+            curveCtx.translate(15, curveCanvas.height / 2);
+            curveCtx.rotate(-Math.PI / 2);
+            curveCtx.fillText('Soma dos Quadrados dos Resíduos (SQR)', 0, 0);
+            curveCtx.restore();
+            
+            // Desenhar pontos
+            scatterCtx.fillStyle = '#4CAF50';
+            sseHistory.forEach((point, index) => {
+                const x = 40 + (point.b - minB) / (maxB - minB) * (curveCanvas.width - 60);
+                const y = curveCanvas.height - 30 - (point.sse / maxSSE) * (curveCanvas.height - 60);
+                
+                curveCtx.beginPath();
+                curveCtx.arc(x, y, 4, 0, 2 * Math.PI);
+                curveCtx.fill();
+            });
+        }
+        
+        // Atualizar resultados
+        function updateResults() {
+            if (minSSE !== Infinity) {
+                document.getElementById('minSSE').textContent = minSSE.toFixed(2);
+                document.getElementById('optimalB').textContent = optimalB.toFixed(4);
+            }
+        }
+        
+        // Resetar
+        function reset() {
+            sseHistory = [];
+            minSSE = Infinity;
+            optimalB = 0;
+            generateData();
+            initializeLine();
+            drawScatterPlot();
+            drawCurve();
+            updateResults();
+            document.getElementById('currentSSE').textContent = '-';
+            document.getElementById('currentB').textContent = '-';
+            document.getElementById('minSSE').textContent = '-';
+            document.getElementById('optimalB').textContent = '-';
+        }
+        
+        // Inicializar ao carregar
+        window.onload = init;
+    </script>
+</body>
+</html>
