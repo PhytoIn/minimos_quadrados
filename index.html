@@ -222,52 +222,86 @@
             });
         }
         
-        // Gerar dados simulados
+// Gerar dados simulados
         function generateData() {
             data = [];
             const dispersionPercent = parseFloat(document.getElementById('dispersion').value);
             const dispersion = dispersionPercent / 100;
             
-            // Gerar dados base com relação linear
-            const slope = (Math.random() - 0.5) * 1.6;
-            const baseIntercept = 50;
+            // Limites visíveis do gráfico (deixando margem para não cortar os pontos)
+            const visibleMinY = 5;
+            const visibleMaxY = 95;
+            const visibleMinX = 0;
+            const visibleMaxX = 100;
             
-            // Primeiro, gerar os dados
+            // Gerar slope aleatório com limite para evitar que a linha saia muito da área visível
+            // Com slope máximo de ±0.5, a variação máxima de Y ao longo de X=100 será ±50
+            const maxSlope = 0.5;
+            const slope = (Math.random() - 0.5) * 2 * maxSlope;
+            
+            // Calcular o intercepto para centralizar a linha na área visível
+            // Queremos que o ponto médio da linha (em X=50) fique próximo ao centro do gráfico
+            const centerX = 50;
+            const targetCenterY = 50;
+            const intercept = targetCenterY - slope * centerX;
+            
+            // Verificar os limites da linha nos extremos
+            const yAtX0 = slope * visibleMinX + intercept;
+            const yAtX100 = slope * visibleMaxX + intercept;
+            
+            // Ajustar o intercepto se a linha sair muito dos limites
+            let adjustedIntercept = intercept;
+            const margin = 20; // margem de segurança para a dispersão
+            
+            if (yAtX0 < visibleMinY + margin && yAtX100 < visibleMinY + margin) {
+                // Linha muito baixa em ambos os lados
+                adjustedIntercept += (visibleMinY + margin - Math.min(yAtX0, yAtX100));
+            } else if (yAtX0 > visibleMaxY - margin && yAtX100 > visibleMaxY - margin) {
+                // Linha muito alta em ambos os lados
+                adjustedIntercept -= (Math.max(yAtX0, yAtX100) - (visibleMaxY - margin));
+            }
+            
+            // Debug: mostrar o slope gerado
+            console.log('Slope gerado:', slope.toFixed(4));
+            
+            // Gerar pontos com dispersão controlada
             for (let i = 0; i < 100; i++) {
                 const x = Math.random() * 100;
-                const baseY = slope * x + baseIntercept;
-                // Aumentar o ruído com a dispersão (100% = ruído domina completamente)
-                const maxNoise = 100 * dispersion;
-                const noise = (Math.random() - 0.5) * 2 * maxNoise;
-                const y = baseY + noise;
+                const baseY = slope * x + adjustedIntercept;
+                
+                // Calcular o espaço disponível para dispersão
+                const spaceAbove = visibleMaxY - baseY;
+                const spaceBelow = baseY - visibleMinY;
+                const minSpace = Math.min(spaceAbove, spaceBelow);
+                
+                // Limitar a dispersão máxima para garantir que os pontos fiquem dentro dos limites
+                // Usar uma distribuição normal para dispersão mais realista
+                let noise = 0;
+                if (dispersion > 0) {
+                    // Gerar ruído com distribuição aproximadamente normal
+                    let normalNoise = 0;
+                    for (let j = 0; j < 6; j++) {
+                        normalNoise += Math.random() - 0.5;
+                    }
+                    normalNoise /= 3; // normalizar para [-1, 1]
+                    
+                    // Escalar o ruído baseado na dispersão e no espaço disponível
+                    // Aumentar o fator de dispersão para que 100% seja equivalente ao antigo 300%
+                    const maxDispersion = Math.min(90, minSpace * 0.9); // no máximo 90% do espaço disponível
+                    noise = normalNoise * maxDispersion * dispersion * 3; // multiplicar por 3 para triplicar o efeito
+                }
+                
+                // Aplicar o ruído e garantir que o ponto fique dentro dos limites
+                const y = Math.max(visibleMinY, Math.min(visibleMaxY, baseY + noise));
+                
                 data.push({ x: x, y: y });
             }
             
-            // Encontrar os limites reais dos dados
-            let minX = Infinity, maxX = -Infinity;
-            let minY = Infinity, maxY = -Infinity;
-            
-            data.forEach(point => {
-                minX = Math.min(minX, point.x);
-                maxX = Math.max(maxX, point.x);
-                minY = Math.min(minY, point.y);
-                maxY = Math.max(maxY, point.y);
-            });
-            
-            // Adicionar margem de 10%
-            const xMargin = (maxX - minX) * 0.1;
-            const yMargin = (maxY - minY) * 0.1;
-            
-            dataMinX = minX - xMargin;
-            dataMaxX = maxX + xMargin;
-            dataMinY = minY - yMargin;
-            dataMaxY = maxY + yMargin;
-            
-            // Normalizar os dados para o intervalo 0-100 para facilitar os cálculos
-            data = data.map(point => ({
-                x: (point.x - dataMinX) / (dataMaxX - dataMinX) * 100,
-                y: (point.y - dataMinY) / (dataMaxY - dataMinY) * 100
-            }));
+            // Usar limites fixos para os eixos (sem normalização adicional)
+            dataMinX = 0;
+            dataMaxX = 100;
+            dataMinY = 0;
+            dataMaxY = 100;
         }
         
         // Inicializar linha horizontal no topo
