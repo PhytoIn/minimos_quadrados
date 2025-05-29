@@ -39,6 +39,7 @@
             margin: 0 auto;
             max-width: 100%;
             height: auto;
+            touch-action: none;
         }
         
         .controls {
@@ -345,15 +346,18 @@
         // Manipulação de mouse/touch
         function getEventPos(e) {
             const rect = scatterCanvas.getBoundingClientRect();
+            const scaleX = scatterCanvas.width / rect.width;
+            const scaleY = scatterCanvas.height / rect.height;
+            
             if (e.touches) {
                 return {
-                    x: e.touches[0].clientX - rect.left,
-                    y: e.touches[0].clientY - rect.top
+                    x: (e.touches[0].clientX - rect.left) * scaleX,
+                    y: (e.touches[0].clientY - rect.top) * scaleY
                 };
             }
             return {
-                x: e.clientX - rect.left,
-                y: e.clientY - rect.top
+                x: (e.clientX - rect.left) * scaleX,
+                y: (e.clientY - rect.top) * scaleY
             };
         }
         
@@ -363,6 +367,7 @@
         
         function handleTouchStart(e) {
             e.preventDefault();
+            e.stopPropagation();
             handleStart(getEventPos(e));
         }
         
@@ -373,10 +378,13 @@
             const distToLeft = Math.sqrt(Math.pow(pos.x - leftPoint.x, 2) + Math.pow(pos.y - leftPoint.y, 2));
             const distToRight = Math.sqrt(Math.pow(pos.x - rightPoint.x, 2) + Math.pow(pos.y - rightPoint.y, 2));
             
-            if (distToLeft < 15) {
+            // Aumentar a área de toque para dispositivos móveis
+            const touchRadius = 25;
+            
+            if (distToLeft < touchRadius) {
                 isDragging = true;
                 dragPoint = 'left';
-            } else if (distToRight < 15) {
+            } else if (distToRight < touchRadius) {
                 isDragging = true;
                 dragPoint = 'right';
             }
@@ -388,6 +396,7 @@
         
         function handleTouchMove(e) {
             e.preventDefault();
+            e.stopPropagation();
             handleMove(getEventPos(e));
         }
         
@@ -412,6 +421,7 @@
         
         function handleTouchEnd(e) {
             e.preventDefault();
+            e.stopPropagation();
             isDragging = false;
             dragPoint = null;
         }
