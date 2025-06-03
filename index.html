@@ -63,6 +63,11 @@
             border: 1px solid #ddd;
             border-radius: 4px;
         }
+
+        input[type="range"] {
+        width: 200px;
+        margin: 0 10px;
+        }
         
         button {
             background-color: #4CAF50;
@@ -118,8 +123,8 @@
         <div class="controls">
             <div class="control-group">
                 <label for="dispersion">Dispersão:</label>
-                <input type="number" id="dispersion" min="0" max="100" step="10" value="50">
-                <span>%</span>
+                <input type="range" id="dispersion" min="0" max="100" step="10" value="50">
+                 <span id="dispersionValue">50%</span>
             </div>
             
             <button onclick="calculateSumOfSquares()">Calcular Soma dos Quadrados</button>
@@ -209,7 +214,8 @@
             scatterCanvas.addEventListener('touchmove', handleTouchMove);
             scatterCanvas.addEventListener('touchend', handleTouchEnd);
             
-            document.getElementById('dispersion').addEventListener('change', function() {
+            document.getElementById('dispersion').addEventListener('input', function() {
+            document.getElementById('dispersionValue').textContent = this.value + '%';
                 generateData();
                 drawScatterPlot();
             });
