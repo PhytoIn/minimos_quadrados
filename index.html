@@ -5,586 +5,962 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ajuste de Modelos Lineares - Mínimos Quadrados</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
-            max-width: 600px;
-            margin: 0 auto;
+        :root {
+            --bg: #f4f6f8;
+            --surface: #ffffff;
+            --surface-2: #f9fafb;
+            --text: #1f2937;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --accent: #10b981;
+            --residual: #047857;
+            --line: #ef4444;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+            --radius: 12px;
+            --radius-sm: 8px;
         }
-        
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0 auto;
+            padding: 24px 16px;
+            background-color: var(--bg);
+            max-width: 640px;
+            color: var(--text);
+            line-height: 1.5;
+        }
+
         h1 {
             text-align: center;
-            color: #333;
-            margin-bottom: 20px;
+            color: var(--text);
+            margin: 0 0 20px;
+            font-size: 1.4rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
         }
-        
+
         .container {
-            background-color: white;
+            background-color: var(--surface);
             padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
         }
-        
+
         .canvas-container {
             position: relative;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
-        
+
         canvas {
-            border: 1px solid #ddd;
-            cursor: pointer;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            cursor: crosshair;
             display: block;
             margin: 0 auto;
             max-width: 100%;
             height: auto;
             touch-action: none;
-        }
-        
-        .controls {
-            margin: 20px 0;
-            text-align: center;
-        }
-        
-        .control-group {
-            margin: 10px 0;
-        }
-        
-        label {
-            display: inline-block;
-            margin-right: 10px;
-            font-weight: bold;
-        }
-        
-        input[type="number"] {
-            width: 60px;
-            padding: 5px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            background: var(--surface-2);
         }
 
-        input[type="range"] {
-        width: 200px;
-        margin: 0 10px;
+        .controls {
+            margin: 16px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
         }
-        
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        label {
+            font-weight: 500;
+            color: var(--text);
+        }
+
+        input[type="number"] {
+            width: 70px;
+            padding: 7px 10px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 0.95rem;
+            font-family: inherit;
+            background: var(--surface);
+            color: var(--text);
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+
+        .button-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
         button {
-            background-color: #4CAF50;
+            background-color: var(--primary);
             color: white;
-            padding: 10px 20px;
+            padding: 10px 18px;
             border: none;
-            border-radius: 4px;
+            border-radius: var(--radius-sm);
             cursor: pointer;
-            font-size: 16px;
-            margin: 5px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            font-family: inherit;
+            transition: background-color 0.15s, transform 0.05s, box-shadow 0.15s;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         }
-        
+
         button:hover {
-            background-color: #45a049;
+            background-color: var(--primary-hover);
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
         }
-        
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        button:focus-visible {
+            outline: 2px solid var(--primary);
+            outline-offset: 2px;
+        }
+
         button.reset {
-            background-color: #f44336;
+            background-color: var(--danger);
         }
-        
+
         button.reset:hover {
-            background-color: #da190b;
+            background-color: var(--danger-hover);
+            box-shadow: 0 2px 6px rgba(239, 68, 68, 0.25);
         }
-        
+
         .results {
-            background-color: #f9f9f9;
-            padding: 15px;
-            border-radius: 5px;
-            margin-top: 20px;
+            background-color: var(--surface-2);
+            padding: 16px;
+            border-radius: var(--radius-sm);
+            margin-top: 16px;
+            border: 1px solid var(--border);
+        }
+
+        .results h3 {
+            margin: 0 0 12px;
+            color: var(--text);
+            font-size: 1rem;
+            font-weight: 600;
             text-align: center;
         }
-        
-        .results h3 {
-            margin-top: 0;
-            color: #333;
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
         }
-        
+
+        .results-card {
+            background: var(--surface);
+            padding: 12px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .results-card .card-title {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin: 0 0 8px;
+            font-weight: 500;
+        }
+
+        .results-card p {
+            margin: 4px 0;
+            font-size: 0.9rem;
+            color: var(--text);
+        }
+
         .result-value {
-            font-size: 18px;
-            font-weight: bold;
-            color: #4CAF50;
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--accent);
+            font-variant-numeric: tabular-nums;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 16px 10px;
+            }
+            h1 {
+                font-size: 1.2rem;
+            }
+            .container {
+                padding: 14px;
+            }
         }
     </style>
 </head>
 <body>
     <h1>Demonstração: Ajuste Linear por Mínimos Quadrados</h1>
-    
+
     <div class="container">
         <div class="canvas-container">
             <canvas id="scatterCanvas" width="560" height="400"></canvas>
         </div>
-        
+
         <div class="controls">
             <div class="control-group">
                 <label for="dispersion">Dispersão:</label>
-                <input type="range" id="dispersion" min="0" max="100" step="5" value="50">
-                 <span id="dispersionValue">50%</span>
+                <input type="number" id="dispersion" min="0" max="100" step="10" value="50">
+                <span>%</span>
             </div>
-            
-            <button onclick="calculateSumOfSquares()">Calcular Soma dos Quadrados</button>
-            <button class="reset" onclick="reset()">Reiniciar</button>
+
+            <div class="button-row">
+                <button onclick="calculateSumOfSquares()">Calcular Soma dos Quadrados</button>
+                <button class="reset" onclick="reset()">Resetar</button>
+            </div>
         </div>
-        
+
         <div class="canvas-container">
             <canvas id="curveCanvas" width="560" height="300"></canvas>
         </div>
-        
+
         <div class="results">
             <h3>Resultados</h3>
-            <div style="display: flex; justify-content: space-around; margin-bottom: 15px;">
-                <div>
-                    <p style="margin: 5px 0;">Cálculo Atual:</p>
+            <div class="results-grid">
+                <div class="results-card">
+                    <p class="card-title">Cálculo Atual</p>
                     <p>SQR: <span class="result-value" id="currentSSE">-</span></p>
+                    <p>a: <span class="result-value" id="currentA">-</span></p>
                     <p>b: <span class="result-value" id="currentB">-</span></p>
                 </div>
-                <div>
-                    <p style="margin: 5px 0;">Melhor Ajuste:</p>
+                <div class="results-card">
+                    <p class="card-title">Melhor Ajuste</p>
                     <p>SQR: <span class="result-value" id="minSSE">-</span></p>
+                    <p>a: <span class="result-value" id="optimalA">-</span></p>
                     <p>b: <span class="result-value" id="optimalB">-</span></p>
                 </div>
             </div>
         </div>
     </div>
 
-    <footer style="text-align: center; margin-top: 20px; color: #666; font-size: 14px;">
-        © 2025 Rodrigo Pereira
-    </footer>
+    <footer>© 2026 Rodrigo Pereira</footer>
 
     <script>
-        // Variáveis globais
-        let data = [];
-        let lineY1, lineY2;
-        let isDragging = false;
-        let dragPoint = null;
-        let sseHistory = [];
-        let minSSE = Infinity;
-        let optimalB = 0;
-        let dataMinY = 0;
-        let dataMaxY = 100;
-        let dataMinX = 0;
-        let dataMaxX = 100;
-        
-        // Canvas e contextos
+        // ====== Configuração ======
+        const CONFIG = {
+            numPoints: 100,
+            dataMin: 0,
+            dataMax: 100,
+            visibleMinY: 5,
+            visibleMaxY: 95,
+            plotMargin: 30,
+            plotPadding: 10,
+            handleRadius: 8,
+            touchRadius: 25,
+            centerGripHalfWidth: 35,
+            centerGripHalfHeight: 10,
+            residualPercentiles: [5, 15, 25, 35, 45, 55, 65, 75, 85, 95],
+            colors: {
+                point: '#4CAF50',
+                line: '#ef4444',
+                handle: '#ef4444',
+                centerGrip: 'rgba(239, 68, 68, 0.35)',
+                residual: '#047857',
+                residualPoint: '#047857',
+                axis: '#9ca3af',
+                axisCurve: '#374151',
+                curvePoint: '#2563eb',
+                curveOptimal: '#ef4444'
+            }
+        };
+
+        // ====== Estado ======
+        // Os handles da reta agora têm posição livre em (x, y) no espaço de dados,
+        // permitindo retas quase verticais. Os handles deslizam pelas bordas do gráfico.
+        const state = {
+            data: [],
+            leftHandle: { x: 0, y: 20 },
+            rightHandle: { x: 100, y: 20 },
+            isDragging: false,
+            dragMode: null,             // 'left' | 'right' | 'parallel'
+            parallelDragOffset: 0,
+            hoverCenter: false,
+            sseHistory: [],
+            minSSE: Infinity,
+            optimalA: 0,
+            optimalB: 0,
+            showResiduals: false
+        };
+
         const scatterCanvas = document.getElementById('scatterCanvas');
         const scatterCtx = scatterCanvas.getContext('2d');
         const curveCanvas = document.getElementById('curveCanvas');
         const curveCtx = curveCanvas.getContext('2d');
-        
-        // Função para ajustar tamanho dos canvas responsivamente
+
+        // ====== Responsividade ======
         function resizeCanvas() {
             const container = document.querySelector('.container');
-            const containerWidth = container.clientWidth - 40; // padding da container
-            
-            // Ajustar canvas do gráfico de dispersão
-            const scatterRatio = 400 / 560; // altura/largura original
-            let scatterWidth = Math.min(560, containerWidth);
-            let scatterHeight = scatterWidth * scatterRatio;
-            
+            const containerWidth = container.clientWidth - 40;
+
+            const scatterWidth = Math.min(560, containerWidth);
             scatterCanvas.style.width = scatterWidth + 'px';
-            scatterCanvas.style.height = scatterHeight + 'px';
-            
-            // Ajustar canvas da curva
-            const curveRatio = 300 / 560; // altura/largura original
-            let curveWidth = Math.min(560, containerWidth);
-            let curveHeight = curveWidth * curveRatio;
-            
+            scatterCanvas.style.height = (scatterWidth * (400 / 560)) + 'px';
+
+            const curveWidth = Math.min(560, containerWidth);
             curveCanvas.style.width = curveWidth + 'px';
-            curveCanvas.style.height = curveHeight + 'px';
+            curveCanvas.style.height = (curveWidth * (300 / 560)) + 'px';
         }
-        
-        // Inicialização
+
+        // ====== Inicialização ======
         function init() {
             resizeCanvas();
             generateData();
             initializeLine();
             drawScatterPlot();
             drawCurve();
-            
-            // Event listeners
+
             scatterCanvas.addEventListener('mousedown', handleMouseDown);
             scatterCanvas.addEventListener('mousemove', handleMouseMove);
             scatterCanvas.addEventListener('mouseup', handleMouseUp);
-            scatterCanvas.addEventListener('touchstart', handleTouchStart);
-            scatterCanvas.addEventListener('touchmove', handleTouchMove);
+            scatterCanvas.addEventListener('mouseleave', handleMouseLeave);
+            scatterCanvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+            scatterCanvas.addEventListener('touchmove', handleTouchMove, { passive: false });
             scatterCanvas.addEventListener('touchend', handleTouchEnd);
-            
-            document.getElementById('dispersion').addEventListener('input', function() {
-            document.getElementById('dispersionValue').textContent = this.value + '%';
+
+            document.getElementById('dispersion').addEventListener('change', () => {
                 generateData();
+                state.showResiduals = false;
                 drawScatterPlot();
             });
-            
-            // Redimensionar canvas quando a janela mudar de tamanho
-            window.addEventListener('resize', function() {
+
+            window.addEventListener('resize', () => {
                 resizeCanvas();
                 drawScatterPlot();
                 drawCurve();
             });
         }
-        
-// Gerar dados simulados
+
+        // ====== Gerador de ruído aproximadamente gaussiano ======
+        // Soma de 6 uniformes(0,1) menos 3: média 0, variância 0.5.
+        function normalNoise() {
+            let sum = 0;
+            for (let i = 0; i < 6; i++) sum += Math.random();
+            return sum - 3;
+        }
+
+        // ====== Geração de dados ======
         function generateData() {
-            data = [];
+            state.data = [];
             const dispersionPercent = parseFloat(document.getElementById('dispersion').value);
             const dispersion = dispersionPercent / 100;
-            
-            // Limites visíveis do gráfico (deixando margem para não cortar os pontos)
-            const visibleMinY = 5;
-            const visibleMaxY = 95;
-            const visibleMinX = 0;
-            const visibleMaxX = 100;
-            
-            // Gerar slope aleatório com limite para evitar que a linha saia muito da área visível
-            // Com slope máximo de ±0.5, a variação máxima de Y ao longo de X=100 será ±50
+
+            const { visibleMinY, visibleMaxY, dataMin, dataMax } = CONFIG;
+
             const maxSlope = 0.5;
             const slope = (Math.random() - 0.5) * 2 * maxSlope;
-            
-            // Calcular o intercepto para centralizar a linha na área visível
-            // Queremos que o ponto médio da linha (em X=50) fique próximo ao centro do gráfico
-            const centerX = 50;
-            const targetCenterY = 50;
-            const intercept = targetCenterY - slope * centerX;
-            
-            // Verificar os limites da linha nos extremos
-            const yAtX0 = slope * visibleMinX + intercept;
-            const yAtX100 = slope * visibleMaxX + intercept;
-            
-            // Ajustar o intercepto se a linha sair muito dos limites
+            const intercept = 50 - slope * 50;
+
+            const yAt0 = intercept;
+            const yAt100 = slope * 100 + intercept;
+            const margin = 20;
             let adjustedIntercept = intercept;
-            const margin = 20; // margem de segurança para a dispersão
-            
-            if (yAtX0 < visibleMinY + margin && yAtX100 < visibleMinY + margin) {
-                // Linha muito baixa em ambos os lados
-                adjustedIntercept += (visibleMinY + margin - Math.min(yAtX0, yAtX100));
-            } else if (yAtX0 > visibleMaxY - margin && yAtX100 > visibleMaxY - margin) {
-                // Linha muito alta em ambos os lados
-                adjustedIntercept -= (Math.max(yAtX0, yAtX100) - (visibleMaxY - margin));
+            if (yAt0 < visibleMinY + margin && yAt100 < visibleMinY + margin) {
+                adjustedIntercept += (visibleMinY + margin - Math.min(yAt0, yAt100));
+            } else if (yAt0 > visibleMaxY - margin && yAt100 > visibleMaxY - margin) {
+                adjustedIntercept -= (Math.max(yAt0, yAt100) - (visibleMaxY - margin));
             }
-            
-            // Debug: mostrar o slope gerado
-            console.log('Slope gerado:', slope.toFixed(4));
-            
-            // Gerar pontos com dispersão controlada
-            for (let i = 0; i < 100; i++) {
-                const x = Math.random() * 100;
+
+            for (let i = 0; i < CONFIG.numPoints; i++) {
+                const x = Math.random() * (dataMax - dataMin) + dataMin;
                 const baseY = slope * x + adjustedIntercept;
-                
-                // Calcular o espaço disponível para dispersão
-                const spaceAbove = visibleMaxY - baseY;
-                const spaceBelow = baseY - visibleMinY;
-                const minSpace = Math.min(spaceAbove, spaceBelow);
-                
-                // Limitar a dispersão máxima para garantir que os pontos fiquem dentro dos limites
-                // Usar uma distribuição normal para dispersão mais realista
+
+                // Novo escalonamento: usamos uma fração fixa da altura visível como
+                // desvio-padrão máximo (~ 1/6 do intervalo Y) e multiplicamos pelo
+                // nível de dispersão. Em 0% não há ruído; em 50% o sigma é metade
+                // do máximo (tendência ainda visível); em 100% é o máximo (sem
+                // extrapolar as bordas de forma artificial).
+                //   maxSigma = 15  (em unidades de Y: 0–100)
+                //   sigma    = maxSigma * dispersion
+                //   noise    = N(0, sigma^2), aproximado por Irwin–Hall (var = 0.5)
+                // Como normalNoise() tem desvio ~0.707, multiplicamos por sigma/0.707
+                // para que o sigma efetivo seja exatamente `sigma`.
                 let noise = 0;
                 if (dispersion > 0) {
-                    // Gerar ruído com distribuição aproximadamente normal
-                    let normalNoise = 0;
-                    for (let j = 0; j < 6; j++) {
-                        normalNoise += Math.random() - 0.5;
-                    }
-                    normalNoise /= 3; // normalizar para [-1, 1]
-                    
-                    // Escalar o ruído baseado na dispersão e no espaço disponível
-                    // Aumentar o fator de dispersão para que 100% seja equivalente ao antigo 300%
-                    const maxDispersion = Math.min(90, minSpace * 0.9); // no máximo 90% do espaço disponível
-                    noise = normalNoise * maxDispersion * dispersion * 3; // multiplicar por 3 para triplicar o efeito
+                    const maxSigma = 15;
+                    const sigma = maxSigma * dispersion;
+                    noise = normalNoise() * (sigma / 0.707);
                 }
-                
-                // Aplicar o ruído e garantir que o ponto fique dentro dos limites
-                const y = Math.max(visibleMinY, Math.min(visibleMaxY, baseY + noise));
-                
-                data.push({ x: x, y: y });
+
+                // Clamp suave: em vez de empurrar para a borda (que cria a faixa
+                // artificial visível na imagem 2), descartamos o excesso retornando
+                // o valor à linha-base quando extrapola. Isso preserva o formato
+                // normal da nuvem em vez de concentrar pontos na borda.
+                let y = baseY + noise;
+                if (y < visibleMinY || y > visibleMaxY) {
+                    // refletir em torno da borda violada (reflexão preserva distribuição
+                    // aproximadamente normal truncada, sem criar acúmulo na borda)
+                    if (y < visibleMinY) y = visibleMinY + (visibleMinY - y) * 0.5;
+                    if (y > visibleMaxY) y = visibleMaxY - (y - visibleMaxY) * 0.5;
+                    y = Math.max(visibleMinY, Math.min(visibleMaxY, y));
+                }
+                state.data.push({ x, y });
             }
-            
-            // Usar limites fixos para os eixos (sem normalização adicional)
-            dataMinX = 0;
-            dataMaxX = 100;
-            dataMinY = 0;
-            dataMaxY = 100;
         }
-        
-        // Inicializar linha horizontal no topo
+
         function initializeLine() {
-            lineY1 = 20;
-            lineY2 = 20;
+            state.leftHandle = { x: CONFIG.dataMin, y: 20 };
+            state.rightHandle = { x: CONFIG.dataMax, y: 20 };
         }
-        
-        // Converter coordenadas do canvas para coordenadas dos dados
+
+        // ====== Coordenadas ======
         function canvasToData(canvasX, canvasY) {
-            const margin = 30;
-            const x = ((canvasX - margin) / (scatterCanvas.width - margin - 10)) * 100;
-            const y = 100 - ((canvasY - 10) / (scatterCanvas.height - margin - 10)) * 100;
+            const { plotMargin, plotPadding, dataMax } = CONFIG;
+            const plotW = scatterCanvas.width - plotMargin - plotPadding;
+            const plotH = scatterCanvas.height - plotMargin - plotPadding;
+            const x = ((canvasX - plotMargin) / plotW) * dataMax;
+            const y = dataMax - ((canvasY - plotPadding) / plotH) * dataMax;
             return { x, y };
         }
-        
-        // Converter coordenadas dos dados para coordenadas do canvas
+
         function dataToCanvas(dataX, dataY) {
-            const margin = 30;
-            const x = margin + ((dataX / 100) * (scatterCanvas.width - margin - 10));
-            const y = ((100 - dataY) / 100) * (scatterCanvas.height - margin - 10) + 10;
+            const { plotMargin, plotPadding, dataMax } = CONFIG;
+            const plotW = scatterCanvas.width - plotMargin - plotPadding;
+            const plotH = scatterCanvas.height - plotMargin - plotPadding;
+            const x = plotMargin + (dataX / dataMax) * plotW;
+            const y = plotPadding + ((dataMax - dataY) / dataMax) * plotH;
             return { x, y };
         }
-        
-        // Desenhar gráfico de dispersão
+
+        // ====== Parâmetros da reta ======
+        function getLineParams() {
+            const { leftHandle: L, rightHandle: R } = state;
+            const dx = R.x - L.x;
+            if (Math.abs(dx) < 1e-6) {
+                return { a: L.y, b: 0, vertical: true };
+            }
+            const b = (R.y - L.y) / dx;
+            const a = L.y - b * L.x;
+            return { a, b, vertical: false };
+        }
+
+        function predictY(x) {
+            const { a, b, vertical } = getLineParams();
+            if (vertical) return state.leftHandle.y;
+            return a + b * x;
+        }
+
+        // ====== Helpers de desenho ======
+        function drawCircle(ctx, x, y, r, fillStyle) {
+            ctx.fillStyle = fillStyle;
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+
+        function clipToPlotArea(ctx) {
+            ctx.beginPath();
+            ctx.rect(
+                CONFIG.plotMargin,
+                CONFIG.plotPadding,
+                scatterCanvas.width - CONFIG.plotMargin - CONFIG.plotPadding,
+                scatterCanvas.height - CONFIG.plotMargin - CONFIG.plotPadding
+            );
+            ctx.clip();
+        }
+
+        // ====== Scatter plot ======
         function drawScatterPlot() {
             scatterCtx.clearRect(0, 0, scatterCanvas.width, scatterCanvas.height);
-            
-            // Desenhar eixos
-            scatterCtx.strokeStyle = '#ddd';
+
+            scatterCtx.strokeStyle = CONFIG.colors.axis;
             scatterCtx.lineWidth = 1;
             scatterCtx.beginPath();
-            // Eixo X
-            scatterCtx.moveTo(30, scatterCanvas.height - 30);
-            scatterCtx.lineTo(scatterCanvas.width - 10, scatterCanvas.height - 30);
-            // Eixo Y
-            scatterCtx.moveTo(30, scatterCanvas.height - 30);
-            scatterCtx.lineTo(30, 10);
+            scatterCtx.moveTo(CONFIG.plotMargin, scatterCanvas.height - CONFIG.plotMargin);
+            scatterCtx.lineTo(scatterCanvas.width - CONFIG.plotPadding, scatterCanvas.height - CONFIG.plotMargin);
+            scatterCtx.moveTo(CONFIG.plotMargin, scatterCanvas.height - CONFIG.plotMargin);
+            scatterCtx.lineTo(CONFIG.plotMargin, CONFIG.plotPadding);
             scatterCtx.stroke();
-            
-            // Desenhar pontos
-            scatterCtx.fillStyle = '#4CAF50';
-            data.forEach(point => {
-                const canvasPoint = dataToCanvas(point.x, point.y);
-                scatterCtx.beginPath();
-                scatterCtx.arc(canvasPoint.x, canvasPoint.y, 3, 0, 2 * Math.PI);
-                scatterCtx.fill();
+
+            state.data.forEach(point => {
+                const p = dataToCanvas(point.x, point.y);
+                drawCircle(scatterCtx, p.x, p.y, 3, CONFIG.colors.point);
             });
-            
-            // Desenhar linha ajustável
+
+            if (state.showResiduals) {
+                drawResiduals();
+            }
+
             drawLine();
+
+            if (state.hoverCenter || state.dragMode === 'parallel') {
+                drawCenterGrip();
+            }
         }
-        
-        // Desenhar linha
+
         function drawLine() {
-            const leftPoint = dataToCanvas(0, lineY1);
-            const rightPoint = dataToCanvas(100, lineY2);
-            
-            scatterCtx.strokeStyle = '#ff0000';
+            const L = dataToCanvas(state.leftHandle.x, state.leftHandle.y);
+            const R = dataToCanvas(state.rightHandle.x, state.rightHandle.y);
+
+            scatterCtx.save();
+            clipToPlotArea(scatterCtx);
+            scatterCtx.strokeStyle = CONFIG.colors.line;
             scatterCtx.lineWidth = 2;
             scatterCtx.beginPath();
-            scatterCtx.moveTo(leftPoint.x, leftPoint.y);
-            scatterCtx.lineTo(rightPoint.x, rightPoint.y);
+            scatterCtx.moveTo(L.x, L.y);
+            scatterCtx.lineTo(R.x, R.y);
             scatterCtx.stroke();
-            
-            // Desenhar pontos de controle
-            scatterCtx.fillStyle = '#ff0000';
-            scatterCtx.beginPath();
-            scatterCtx.arc(leftPoint.x, leftPoint.y, 8, 0, 2 * Math.PI);
-            scatterCtx.fill();
-            scatterCtx.beginPath();
-            scatterCtx.arc(rightPoint.x, rightPoint.y, 8, 0, 2 * Math.PI);
-            scatterCtx.fill();
+            scatterCtx.restore();
+
+            drawCircle(scatterCtx, L.x, L.y, CONFIG.handleRadius, CONFIG.colors.handle);
+            drawCircle(scatterCtx, R.x, R.y, CONFIG.handleRadius, CONFIG.colors.handle);
         }
-        
-        // Manipulação de mouse/touch
+
+        function drawCenterGrip() {
+            const L = dataToCanvas(state.leftHandle.x, state.leftHandle.y);
+            const R = dataToCanvas(state.rightHandle.x, state.rightHandle.y);
+            const cx = (L.x + R.x) / 2;
+            const cy = (L.y + R.y) / 2;
+            const dx = R.x - L.x;
+            const dy = R.y - L.y;
+            const angle = Math.atan2(dy, dx);
+            const hw = CONFIG.centerGripHalfWidth;
+            const hh = CONFIG.centerGripHalfHeight;
+
+            scatterCtx.save();
+            scatterCtx.translate(cx, cy);
+            scatterCtx.rotate(angle);
+            scatterCtx.fillStyle = CONFIG.colors.centerGrip;
+            scatterCtx.beginPath();
+            if (scatterCtx.roundRect) {
+                scatterCtx.roundRect(-hw, -hh, hw * 2, hh * 2, 6);
+            } else {
+                scatterCtx.rect(-hw, -hh, hw * 2, hh * 2);
+            }
+            scatterCtx.fill();
+            scatterCtx.restore();
+        }
+
+        // ====== Resíduos ======
+        // Para cada percentil em CONFIG.residualPercentiles, escolhemos um ponto
+        // real do dataset próximo daquele x, alternando acima/abaixo da reta
+        // (primeiro acima, segundo abaixo, etc.). Se não houver ponto do lado
+        // desejado, usa-se o mais próximo disponível.
+        function drawResiduals() {
+            const { residualPercentiles, dataMax, colors } = CONFIG;
+
+            residualPercentiles.forEach((pct, idx) => {
+                const targetX = (pct / 100) * dataMax;
+                const desiredAbove = (idx % 2 === 0);
+
+                let chosen = null;
+                let chosenDist = Infinity;
+                for (const pt of state.data) {
+                    const pred = predictY(pt.x);
+                    const isAbove = pt.y > pred;
+                    if (isAbove === desiredAbove) {
+                        const d = Math.abs(pt.x - targetX);
+                        if (d < chosenDist) {
+                            chosenDist = d;
+                            chosen = pt;
+                        }
+                    }
+                }
+
+                // Fallback: se não achar ponto do lado desejado, usa o mais próximo
+                if (!chosen) {
+                    let d = Infinity;
+                    for (const pt of state.data) {
+                        const dd = Math.abs(pt.x - targetX);
+                        if (dd < d) { d = dd; chosen = pt; }
+                    }
+                }
+                if (!chosen) return;
+
+                const pred = predictY(chosen.x);
+                const ptC = dataToCanvas(chosen.x, chosen.y);
+                const lnC = dataToCanvas(chosen.x, pred);
+
+                scatterCtx.save();
+                clipToPlotArea(scatterCtx);
+                scatterCtx.strokeStyle = colors.residual;
+                scatterCtx.lineWidth = 2;
+                scatterCtx.beginPath();
+                scatterCtx.moveTo(ptC.x, ptC.y);
+                scatterCtx.lineTo(lnC.x, lnC.y);
+                scatterCtx.stroke();
+                scatterCtx.restore();
+
+                drawCircle(scatterCtx, ptC.x, ptC.y, 4.5, colors.residualPoint);
+            });
+        }
+
+        // ====== Interação ======
         function getEventPos(e) {
             const rect = scatterCanvas.getBoundingClientRect();
             const scaleX = scatterCanvas.width / rect.width;
             const scaleY = scatterCanvas.height / rect.height;
-            
-            if (e.touches) {
-                return {
-                    x: (e.touches[0].clientX - rect.left) * scaleX,
-                    y: (e.touches[0].clientY - rect.top) * scaleY
-                };
-            }
+            const src = e.touches ? e.touches[0] : e;
             return {
-                x: (e.clientX - rect.left) * scaleX,
-                y: (e.clientY - rect.top) * scaleY
+                x: (src.clientX - rect.left) * scaleX,
+                y: (src.clientY - rect.top) * scaleY
             };
         }
-        
-        function handleMouseDown(e) {
-            handleStart(getEventPos(e));
+
+        function hitTest(pos) {
+            const L = dataToCanvas(state.leftHandle.x, state.leftHandle.y);
+            const R = dataToCanvas(state.rightHandle.x, state.rightHandle.y);
+            const r2 = CONFIG.touchRadius * CONFIG.touchRadius;
+
+            const dL2 = (pos.x - L.x) ** 2 + (pos.y - L.y) ** 2;
+            const dR2 = (pos.x - R.x) ** 2 + (pos.y - R.y) ** 2;
+
+            if (dL2 < r2 && dL2 <= dR2) return 'left';
+            if (dR2 < r2) return 'right';
+
+            // Zona central: projeção paralela/perpendicular sobre a reta
+            const cx = (L.x + R.x) / 2;
+            const cy = (L.y + R.y) / 2;
+            const dx = R.x - L.x;
+            const dy = R.y - L.y;
+            const len = Math.sqrt(dx * dx + dy * dy) || 1;
+            const ux = dx / len;
+            const uy = dy / len;
+            const px = pos.x - cx;
+            const py = pos.y - cy;
+            const parallel = px * ux + py * uy;
+            const perp = Math.abs(-px * uy + py * ux);
+            if (Math.abs(parallel) <= CONFIG.centerGripHalfWidth && perp <= CONFIG.centerGripHalfHeight + 6) {
+                return 'center';
+            }
+            return null;
         }
-        
+
+        function handleMouseDown(e) { handleStart(getEventPos(e)); }
         function handleTouchStart(e) {
             e.preventDefault();
-            e.stopPropagation();
             handleStart(getEventPos(e));
         }
-        
+
         function handleStart(pos) {
-            const leftPoint = dataToCanvas(0, lineY1);
-            const rightPoint = dataToCanvas(100, lineY2);
-            
-            const distToLeft = Math.sqrt(Math.pow(pos.x - leftPoint.x, 2) + Math.pow(pos.y - leftPoint.y, 2));
-            const distToRight = Math.sqrt(Math.pow(pos.x - rightPoint.x, 2) + Math.pow(pos.y - rightPoint.y, 2));
-            
-            // Aumentar a área de toque para dispositivos móveis
-            const touchRadius = 25;
-            
-            if (distToLeft < touchRadius) {
-                isDragging = true;
-                dragPoint = 'left';
-            } else if (distToRight < touchRadius) {
-                isDragging = true;
-                dragPoint = 'right';
+            const target = hitTest(pos);
+            if (target === 'left' || target === 'right') {
+                state.isDragging = true;
+                state.dragMode = target;
+            } else if (target === 'center') {
+                state.isDragging = true;
+                state.dragMode = 'parallel';
+                const dataPos = canvasToData(pos.x, pos.y);
+                const centerY = (state.leftHandle.y + state.rightHandle.y) / 2;
+                state.parallelDragOffset = centerY - dataPos.y;
+                state.hoverCenter = true;
             }
         }
-        
-        function handleMouseMove(e) {
-            handleMove(getEventPos(e));
-        }
-        
+
+        function handleMouseMove(e) { handleMove(getEventPos(e)); }
         function handleTouchMove(e) {
             e.preventDefault();
-            e.stopPropagation();
             handleMove(getEventPos(e));
         }
-        
+
         function handleMove(pos) {
-            if (isDragging) {
+            if (state.isDragging) {
                 const dataPos = canvasToData(pos.x, pos.y);
-                
-                if (dragPoint === 'left') {
-                    lineY1 = Math.max(0, Math.min(100, dataPos.y));
-                } else if (dragPoint === 'right') {
-                    lineY2 = Math.max(0, Math.min(100, dataPos.y));
+
+                if (state.dragMode === 'left') {
+                    const snapped = snapLeftHandle(dataPos);
+                    state.leftHandle.x = snapped.x;
+                    state.leftHandle.y = snapped.y;
+                } else if (state.dragMode === 'right') {
+                    const snapped = snapRightHandle(dataPos);
+                    state.rightHandle.x = snapped.x;
+                    state.rightHandle.y = snapped.y;
+                } else if (state.dragMode === 'parallel') {
+                    const targetCenterY = dataPos.y + state.parallelDragOffset;
+                    const currentCenterY = (state.leftHandle.y + state.rightHandle.y) / 2;
+                    const delta = targetCenterY - currentCenterY;
+                    state.leftHandle.y += delta;
+                    state.rightHandle.y += delta;
+
+                    // Impedir que a reta saia muito do gráfico
+                    const { dataMin, dataMax } = CONFIG;
+                    const minY = Math.min(state.leftHandle.y, state.rightHandle.y);
+                    const maxY = Math.max(state.leftHandle.y, state.rightHandle.y);
+                    if (minY < dataMin - 20) {
+                        const adj = dataMin - 20 - minY;
+                        state.leftHandle.y += adj;
+                        state.rightHandle.y += adj;
+                    } else if (maxY > dataMax + 20) {
+                        const adj = maxY - (dataMax + 20);
+                        state.leftHandle.y -= adj;
+                        state.rightHandle.y -= adj;
+                    }
                 }
-                
+
+                // Evitar reta indefinida (dx ~ 0)
+                if (Math.abs(state.rightHandle.x - state.leftHandle.x) < 0.5) {
+                    if (state.dragMode === 'left') {
+                        state.leftHandle.x = state.rightHandle.x - 0.5;
+                    } else if (state.dragMode === 'right') {
+                        state.rightHandle.x = state.leftHandle.x + 0.5;
+                    }
+                }
+
                 drawScatterPlot();
+            } else {
+                const target = hitTest(pos);
+                const newHover = (target === 'center');
+                if (newHover !== state.hoverCenter) {
+                    state.hoverCenter = newHover;
+                    drawScatterPlot();
+                }
+                if (newHover) {
+                    scatterCanvas.style.cursor = 'grab';
+                } else if (target === 'left' || target === 'right') {
+                    scatterCanvas.style.cursor = 'grab';
+                } else {
+                    scatterCanvas.style.cursor = 'crosshair';
+                }
             }
         }
-        
-        function handleMouseUp() {
-            isDragging = false;
-            dragPoint = null;
-        }
-        
-        function handleTouchEnd(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            isDragging = false;
-            dragPoint = null;
-        }
-        
-        // Calcular coeficiente angular
-        function calculateSlope() {
-            return (lineY2 - lineY1) / 100;
-        }
-        
-        // Calcular intercepto
-        function calculateIntercept() {
-            return lineY1;
-        }
-        
-        // Calcular soma dos quadrados
-        function calculateSumOfSquares() {
-            const slope = calculateSlope();
-            const intercept = calculateIntercept();
-            
-            let sse = 0;
-            data.forEach(point => {
-                const predicted = slope * point.x + intercept;
-                const error = point.y - predicted;
-                sse += error * error;
+
+        // ====== Ancoragem no perímetro do gráfico ======
+        //
+        // Os handles se movem sobre o PERÍMETRO do retângulo de plotagem, não apenas
+        // sobre uma borda específica. A estratégia é projetar o cursor no perímetro
+        // escolhendo o ponto mais próximo entre as quatro bordas — isso garante
+        // transição suave pelos cantos (sem saltos).
+        //
+        // Para IMPEDIR INVERSÃO TOTAL da reta:
+        //   - O handle esquerdo fica restrito à METADE ESQUERDA das bordas superior
+        //     e inferior (x ≤ dataMax/2) e à borda esquerda inteira.
+        //   - O handle direito fica restrito à METADE DIREITA das bordas superior
+        //     e inferior (x ≥ dataMax/2) e à borda direita inteira.
+        // Assim, a reta sempre tem x_esquerdo < x_direito (no caso extremo vira
+        // vertical com ambos em x = dataMax/2, mas isso é bloqueado pelo clamp
+        // mínimo de dx ≥ 0,5 já existente).
+
+        function snapHandleToPerimeter(dataPos, side) {
+            const { dataMin, dataMax } = CONFIG;
+            const mid = (dataMin + dataMax) / 2;
+
+            // x-range permitido nas bordas superior/inferior para cada lado
+            const hMin = (side === 'left') ? dataMin : mid;
+            const hMax = (side === 'left') ? mid     : dataMax;
+
+            // y-range permitido na borda vertical para cada lado
+            const vMinY = dataMin;
+            const vMaxY = dataMax;
+
+            // Clamp da posição bruta ao retângulo geral (considerando uma folga
+            // externa para o cursor poder "puxar" o handle para o canto).
+            const cx = Math.max(dataMin, Math.min(dataMax, dataPos.x));
+            const cy = Math.max(dataMin, Math.min(dataMax, dataPos.y));
+
+            // Candidatos: projeção em cada uma das bordas permitidas para este lado
+            const candidates = [];
+
+            // Borda vertical (esquerda ou direita)
+            const vx = (side === 'left') ? dataMin : dataMax;
+            candidates.push({
+                x: vx,
+                y: Math.max(vMinY, Math.min(vMaxY, cy)),
+                // distância ao cursor original
+                dist: Math.hypot(dataPos.x - vx, dataPos.y - Math.max(vMinY, Math.min(vMaxY, cy)))
             });
-            
-            // Adicionar ao histórico
-            sseHistory.push({ b: slope, sse: sse });
-            
-            // Atualizar valores atuais
-            document.getElementById('currentSSE').textContent = sse.toFixed(2);
-            document.getElementById('currentB').textContent = slope.toFixed(4);
-            
-            // Atualizar mínimos
-            if (sse < minSSE) {
-                minSSE = sse;
-                optimalB = slope;
+
+            // Borda superior (y = dataMax)
+            const topX = Math.max(hMin, Math.min(hMax, cx));
+            candidates.push({
+                x: topX,
+                y: dataMax,
+                dist: Math.hypot(dataPos.x - topX, dataPos.y - dataMax)
+            });
+
+            // Borda inferior (y = dataMin)
+            const botX = Math.max(hMin, Math.min(hMax, cx));
+            candidates.push({
+                x: botX,
+                y: dataMin,
+                dist: Math.hypot(dataPos.x - botX, dataPos.y - dataMin)
+            });
+
+            // Escolher o candidato mais próximo do cursor: isso dá transição contínua
+            // pelos cantos (à medida que o cursor contorna o canto, o handle passa
+            // suavemente de uma borda para outra).
+            candidates.sort((a, b) => a.dist - b.dist);
+            return { x: candidates[0].x, y: candidates[0].y };
+        }
+
+        function snapLeftHandle(dataPos) {
+            return snapHandleToPerimeter(dataPos, 'left');
+        }
+
+        function snapRightHandle(dataPos) {
+            return snapHandleToPerimeter(dataPos, 'right');
+        }
+
+        function handleMouseUp() {
+            state.isDragging = false;
+            state.dragMode = null;
+        }
+        function handleMouseLeave() {
+            state.isDragging = false;
+            state.dragMode = null;
+            state.hoverCenter = false;
+            scatterCanvas.style.cursor = 'crosshair';
+            drawScatterPlot();
+        }
+        function handleTouchEnd(e) {
+            if (e) e.preventDefault();
+            state.isDragging = false;
+            state.dragMode = null;
+            state.hoverCenter = false;
+            drawScatterPlot();
+        }
+
+        // ====== SQR ======
+        function calculateSumOfSquares() {
+            const { a, b } = getLineParams();
+            // Arredondar b para 4 casas decimais ANTES de usar, tanto para o cálculo
+            // do SQR quanto para exibição. Isso garante que movimentos puramente de
+            // intercepto (que teoricamente não alteram b) não gerem valores de b
+            // minimamente diferentes por flutuação de ponto flutuante ao dividir e
+            // depois reconstituir a inclinação.
+            const bRounded = Math.round(b * 10000) / 10000;
+
+            let sse = 0;
+            for (const pt of state.data) {
+                const pred = a + bRounded * pt.x;
+                const err = pt.y - pred;
+                sse += err * err;
             }
-            
-            // Atualizar interface
+
+            state.sseHistory.push({ a, b: bRounded, sse });
+
+            document.getElementById('currentSSE').textContent = sse.toFixed(2);
+            document.getElementById('currentA').textContent = a.toFixed(4);
+            document.getElementById('currentB').textContent = bRounded.toFixed(4);
+
+            if (sse < state.minSSE) {
+                state.minSSE = sse;
+                state.optimalA = a;
+                state.optimalB = bRounded;
+            }
+
+            state.showResiduals = true;
             updateResults();
+            drawScatterPlot();
             drawCurve();
         }
-        
-        // Desenhar curva de minimização
+
+        // ====== Curva SQR x b ======
         function drawCurve() {
             curveCtx.clearRect(0, 0, curveCanvas.width, curveCanvas.height);
-            
-            if (sseHistory.length === 0) return;
-            
-            // Encontrar limites
-            let minB = Infinity, maxB = -Infinity;
-            let maxSSE = -Infinity;
-            
-            sseHistory.forEach(point => {
-                minB = Math.min(minB, point.b);
-                maxB = Math.max(maxB, point.b);
-                maxSSE = Math.max(maxSSE, point.sse);
-            });
-            
-            // Adicionar margem
+            drawCurveAxes();
+
+            if (state.sseHistory.length === 0) return;
+
+            let minB = Infinity, maxB = -Infinity, maxSSE = -Infinity;
+            for (const p of state.sseHistory) {
+                if (p.b < minB) minB = p.b;
+                if (p.b > maxB) maxB = p.b;
+                if (p.sse > maxSSE) maxSSE = p.sse;
+            }
             const bRange = maxB - minB || 1;
             minB -= bRange * 0.1;
             maxB += bRange * 0.1;
-            
-            // Desenhar eixos
-            curveCtx.strokeStyle = '#333';
+
+            const plotLeft = 40;
+            const plotRight = curveCanvas.width - 20;
+            const plotTop = 20;
+            const plotBottom = curveCanvas.height - 30;
+
+            state.sseHistory.forEach(point => {
+                const x = plotLeft + (point.b - minB) / (maxB - minB) * (plotRight - plotLeft);
+                const y = plotBottom - (point.sse / maxSSE) * (plotBottom - plotTop);
+                const isOptimal = (point.sse === state.minSSE);
+                drawCircle(
+                    curveCtx, x, y,
+                    isOptimal ? 6 : 4,
+                    isOptimal ? CONFIG.colors.curveOptimal : CONFIG.colors.curvePoint
+                );
+            });
+        }
+
+        function drawCurveAxes() {
+            const plotLeft = 40;
+            const plotRight = curveCanvas.width - 20;
+            const plotTop = 20;
+            const plotBottom = curveCanvas.height - 30;
+
+            curveCtx.strokeStyle = CONFIG.colors.axisCurve;
             curveCtx.lineWidth = 1;
             curveCtx.beginPath();
-            curveCtx.moveTo(40, curveCanvas.height - 30);
-            curveCtx.lineTo(curveCanvas.width - 20, curveCanvas.height - 30);
-            curveCtx.moveTo(40, curveCanvas.height - 30);
-            curveCtx.lineTo(40, 20);
+            curveCtx.moveTo(plotLeft, plotBottom);
+            curveCtx.lineTo(plotRight, plotBottom);
+            curveCtx.moveTo(plotLeft, plotBottom);
+            curveCtx.lineTo(plotLeft, plotTop);
             curveCtx.stroke();
-            
-            // Labels
-            curveCtx.fillStyle = '#333';
-            curveCtx.font = '12px Arial';
+
+            curveCtx.fillStyle = CONFIG.colors.axisCurve;
+            curveCtx.font = '12px -apple-system, "Segoe UI", Roboto, sans-serif';
             curveCtx.textAlign = 'center';
-            curveCtx.fillText('Coeficiente Angular (b)', curveCanvas.width / 2, curveCanvas.height - 5);
+            curveCtx.fillText('Coeficiente Angular (b)', curveCanvas.width / 2, curveCanvas.height - 8);
             curveCtx.save();
             curveCtx.translate(15, curveCanvas.height / 2);
             curveCtx.rotate(-Math.PI / 2);
             curveCtx.fillText('Soma dos Quadrados dos Resíduos (SQR)', 0, 0);
             curveCtx.restore();
-            
-            // Desenhar pontos
-            scatterCtx.fillStyle = '#4CAF50';
-            sseHistory.forEach((point, index) => {
-                const x = 40 + (point.b - minB) / (maxB - minB) * (curveCanvas.width - 60);
-                const y = curveCanvas.height - 30 - (point.sse / maxSSE) * (curveCanvas.height - 60);
-                
-                curveCtx.beginPath();
-                curveCtx.arc(x, y, 4, 0, 2 * Math.PI);
-                curveCtx.fill();
-            });
         }
-        
-        // Atualizar resultados
+
+        // ====== Resultados ======
         function updateResults() {
-            if (minSSE !== Infinity) {
-                document.getElementById('minSSE').textContent = minSSE.toFixed(2);
-                document.getElementById('optimalB').textContent = optimalB.toFixed(4);
+            if (state.minSSE !== Infinity) {
+                document.getElementById('minSSE').textContent = state.minSSE.toFixed(2);
+                document.getElementById('optimalA').textContent = state.optimalA.toFixed(4);
+                document.getElementById('optimalB').textContent = state.optimalB.toFixed(4);
             }
         }
-        
-        // Resetar
+
+        // ====== Reset ======
         function reset() {
-            sseHistory = [];
-            minSSE = Infinity;
-            optimalB = 0;
+            state.sseHistory = [];
+            state.minSSE = Infinity;
+            state.optimalA = 0;
+            state.optimalB = 0;
+            state.showResiduals = false;
             generateData();
             initializeLine();
             drawScatterPlot();
             drawCurve();
-            updateResults();
-            document.getElementById('currentSSE').textContent = '-';
-            document.getElementById('currentB').textContent = '-';
-            document.getElementById('minSSE').textContent = '-';
-            document.getElementById('optimalB').textContent = '-';
+            ['currentSSE', 'currentA', 'currentB', 'minSSE', 'optimalA', 'optimalB'].forEach(id => {
+                document.getElementById(id).textContent = '-';
+            });
         }
-        
-        // Inicializar ao carregar
+
         window.onload = init;
     </script>
 </body>
